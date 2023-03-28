@@ -22,8 +22,11 @@ interface Citation {
     citingPaper: Paper;
 }
 
+// const SEMANTIC_SCHOLAR_API_HOST = "http://localhost:8080/";
+const SEMANTIC_SCHOLAR_API_HOST = process.env.REACT_APP_SEMANTIC_SCHOLAR_API_HOST;
+
 export async function getPaperByDOI(doi: string): Promise<Paper> {
-    const endpoint = `http://localhost:8080/api/paper/DOI:${doi}/fields=title,authors,abstract,year,citationCount`;
+    const endpoint = `${SEMANTIC_SCHOLAR_API_HOST}api/paper/DOI:${doi}/fields=title,authors,abstract,year,citationCount`;
 
     const response = await fetch(endpoint);
     // if request failed, throw an error
@@ -37,7 +40,7 @@ export async function getPaperByDOI(doi: string): Promise<Paper> {
 }
 
 export async function getPaperBySSID(ssid: string): Promise<Paper> {
-    const endpoint = `http://localhost:8080/api/paper/SSID:${ssid}/fields=title,authors,abstract,year,citationCount`;
+    const endpoint = `${SEMANTIC_SCHOLAR_API_HOST}api/paper/SSID:${ssid}/fields=title,authors,abstract,year,citationCount`;
 
     const response = await fetch(endpoint);
     // if request failed, throw an error
@@ -51,7 +54,7 @@ export async function getPaperBySSID(ssid: string): Promise<Paper> {
 }
 
 export async function getReferencesBySSID(ssid: string): Promise<Reference[]> {
-    const endpoint = `http://localhost:8080/api/references/SSID:${ssid}/fields=title,authors,abstract,year,citationCount,isInfluential`;
+    const endpoint = `${SEMANTIC_SCHOLAR_API_HOST}api/references/SSID:${ssid}/fields=title,authors,abstract,year,citationCount,isInfluential`;
 
     const response = await fetch(endpoint);
     // if request failed, throw an error
@@ -65,7 +68,7 @@ export async function getReferencesBySSID(ssid: string): Promise<Reference[]> {
 }
 
 export async function getCitationsBySSID(ssid: string): Promise<Citation[]> {
-    const endpoint = `http://localhost:8080/api/citations/SSID:${ssid}/fields=title,authors,abstract,year,citationCount,isInfluential`;
+    const endpoint = `${SEMANTIC_SCHOLAR_API_HOST}api/citations/SSID:${ssid}/fields=title,authors,abstract,year,citationCount,isInfluential`;
 
     const response = await fetch(endpoint);
     // if request failed, throw an error
