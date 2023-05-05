@@ -38,6 +38,8 @@ function App() {
             label: paper.title,
             authors: paper.authors,
             abstract: paper.abstract,
+            // calculate size on a log scale (so we don't get ginormous nodes, +2 to have 0 map to 2 and 1 map to 3)
+            size: paper.citationCount === 0 ? 2 : Math.log(paper.citationCount) + 2,
         } as Partial<Record<"id", OptId>>;
         newNodes.push(newNode);
         count += 1;
@@ -50,6 +52,7 @@ function App() {
                 label: ref.citedPaper.title,
                 authors: ref.citedPaper.authors,
                 abstract: ref.citedPaper.abstract,
+                size: ref.citedPaper.citationCount === 0 ? 2 : Math.log(ref.citedPaper.citationCount) + 2,
             } as Partial<Record<"id", OptId>>;
             newNodes.push(newNode);
 
@@ -63,12 +66,15 @@ function App() {
             count += 1;
         });
 
+        console.log(newNodes);
+
         citations.forEach((cite) => {
             newNode = {
                 id: nodeCounter + count,
                 label: cite.citingPaper.title,
                 authors: cite.citingPaper.authors,
                 abstract: cite.citingPaper.abstract,
+                size: cite.citingPaper.citationCount === 0 ? 2 : Math.log(cite.citingPaper.citationCount) + 2,
             } as Partial<Record<"id", OptId>>;
             newNodes.push(newNode);
 
