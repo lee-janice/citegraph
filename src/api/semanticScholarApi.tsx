@@ -82,7 +82,7 @@ export async function getReferencesBySSID(ssid: string): Promise<Reference[]> {
 }
 
 export async function getCitationsBySSID(ssid: string): Promise<Citation[]> {
-    const endpoint = `${SEMANTIC_SCHOLAR_API_HOST}api/citations/SSID:${ssid}/fields=title,authors,abstract,year,citationCount,isInfluential`;
+    const endpoint = `${SEMANTIC_SCHOLAR_API_HOST}api/citations/SSID:${ssid}/fields=title,authors,abstract,year,citationCount,isInfluential&limit=999`;
 
     const response = await fetch(endpoint);
     // if request failed, throw an error

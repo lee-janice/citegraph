@@ -15,8 +15,6 @@ function App() {
     const [doiInput, setDoiInput] = useState("");
     const [keywordInput, setKeywordInput] = useState("");
     const [paper, setPaper] = useState("");
-    const [references, setReferences] = useState("");
-    const [citations, setCitations] = useState("");
 
     const [visNetwork, setVisNetwork] = useState<Network | null>(null);
     const [nodes, setNodes] = useState(new DataSet({}));
@@ -32,16 +30,20 @@ function App() {
                 break;
             case InputType.Keyword:
                 paper = await getPaperByKeyword(keywordInput);
-                console.log(keywordInput);
                 break;
         }
-        console.log(paper);
-        const references = (await getReferencesBySSID(paper.paperId)).filter((ref) => ref.isInfluential);
-        const citations = (await getCitationsBySSID(paper.paperId)).filter((cite) => cite.isInfluential);
+
+        const references = (await getReferencesBySSID(paper.paperId))
+            .filter((ref) => ref.citedPaper.citationCount !== null)
+            .sort((a, b) => b.citedPaper.citationCount - a.citedPaper.citationCount)
+            .slice(0, 8);
+
+        const citations = (await getCitationsBySSID(paper.paperId))
+            .filter((cite) => cite.citingPaper.citationCount !== null)
+            .sort((a, b) => b.citingPaper.citationCount - a.citingPaper.citationCount)
+            .slice(0, 3);
 
         setPaper(paper.title.toString());
-        setReferences(references.map((ref) => ref.citedPaper.title).toString());
-        setCitations(citations.map((cite) => cite.citingPaper.title).toString());
 
         // add nodes and edges for paper, references, and citations
         var newNodes: Partial<Record<"id", OptId>>[] = [];
@@ -56,8 +58,8 @@ function App() {
             abstract: paper.abstract,
             // calculate size on a log scale (so we don't get ginormous nodes, +5 to have 0 map to 5 and 1 map to 6)
             size: paper.citationCount === 0 ? 5 : Math.log(paper.citationCount) + 5,
-            x: (paper.year - 1900) * 25,
-            y: -paper.citationCount / 10,
+            x: paper.year * 24,
+            y: -paper.citationCount / 32,
         } as Partial<Record<"id", OptId>>;
         newNodes.push(newNode);
         count += 1;
@@ -71,8 +73,8 @@ function App() {
                 authors: ref.citedPaper.authors,
                 abstract: ref.citedPaper.abstract,
                 size: ref.citedPaper.citationCount === 0 ? 5 : Math.log(ref.citedPaper.citationCount) + 5,
-                x: (ref.citedPaper.year - 1900) * 25,
-                y: -ref.citedPaper.citationCount / 25,
+                x: ref.citedPaper.year * 24,
+                y: -ref.citedPaper.citationCount / 32,
             } as Partial<Record<"id", OptId>>;
             newNodes.push(newNode);
 
@@ -95,8 +97,8 @@ function App() {
                 authors: cite.citingPaper.authors,
                 abstract: cite.citingPaper.abstract,
                 size: cite.citingPaper.citationCount === 0 ? 5 : Math.log(cite.citingPaper.citationCount) + 5,
-                x: (cite.citingPaper.year - 1900) * 25,
-                y: -cite.citingPaper.citationCount / 25,
+                x: cite.citingPaper.year * 24,
+                y: -cite.citingPaper.citationCount / 32,
             } as Partial<Record<"id", OptId>>;
             newNodes.push(newNode);
 
