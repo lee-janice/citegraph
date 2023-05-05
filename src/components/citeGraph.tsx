@@ -27,10 +27,12 @@ const CiteGraph: React.FC<Props> = ({ setVisNetwork, setNodes, setEdges }) => {
             font: {
                 strokeWidth: 7.5,
             },
+            widthConstraint: { maximum: 256 },
         },
         edges: { arrows: { to: { enabled: true } } },
+        physics: false,
         interaction: { multiselect: true }, // allows for multi-select using a long press or cmd-click
-        layout: { randomSeed: 1337 },
+        // layout: { randomSeed: 1337 },
     };
 
     // Create a ref to provide DOM access
