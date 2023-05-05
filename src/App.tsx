@@ -1,13 +1,19 @@
 import React, { useState } from "react";
 import { Network } from "vis-network";
-import { getCitationsBySSID, getPaperByDOI, getReferencesBySSID } from "./api/semanticScholarApi";
+import { getCitationsBySSID, getPaperByDOI, getPaperByKeyword, getReferencesBySSID } from "./api/semanticScholarApi";
 import { DataSet } from "vis-data/peer/esm/vis-data";
 import VisNetwork from "./components/citeGraph";
 import "./App.css";
 import { OptId } from "vis-data/declarations/data-interface";
 
+enum InputType {
+    DOI,
+    Keyword,
+}
+
 function App() {
-    const [input, setInput] = useState("");
+    const [doiInput, setDoiInput] = useState("");
+    const [keywordInput, setKeywordInput] = useState("");
     const [paper, setPaper] = useState("");
     const [references, setReferences] = useState("");
     const [citations, setCitations] = useState("");
@@ -18,8 +24,18 @@ function App() {
 
     const [nodeCounter, setNodeCounter] = useState(0);
 
-    const handlePaper = async () => {
-        const paper = await getPaperByDOI(input);
+    const handlePaper = async (inputType: InputType) => {
+        let paper;
+        switch (inputType) {
+            case InputType.DOI:
+                paper = await getPaperByDOI(doiInput);
+                break;
+            case InputType.Keyword:
+                paper = await getPaperByKeyword(keywordInput);
+                console.log(keywordInput);
+                break;
+        }
+        console.log(paper);
         const references = (await getReferencesBySSID(paper.paperId)).filter((ref) => ref.isInfluential);
         const citations = (await getCitationsBySSID(paper.paperId)).filter((cite) => cite.isInfluential);
 
@@ -96,13 +112,18 @@ function App() {
 
         nodes.add(newNodes);
         edges.add(newEdges);
+        visNetwork?.fit();
         setNodeCounter(nodeCounter + count);
     };
 
     return (
         <div className="App">
-            <input type="search" onChange={(e) => setInput(e.target.value)} />
-            <input type="submit" value="submit" onClick={handlePaper} />
+            Search by DOI: <input type="search" onChange={(e) => setDoiInput(e.target.value)} />
+            <input type="submit" value="submit" onClick={() => handlePaper(InputType.DOI)} />
+            <br />
+            <br />
+            Search by Keyword: <input type="search" onChange={(e) => setKeywordInput(e.target.value)} />
+            <input type="submit" value="submit" onClick={() => handlePaper(InputType.Keyword)} />
             <br />
             <br />
             Paper: {paper}
