@@ -1,9 +1,9 @@
-interface Author {
+export interface Author {
     authorId: number;
     name: string;
 }
 
-interface Paper {
+export interface Paper {
     paperId: string;
     title: string;
     authors: Author[];
@@ -12,12 +12,12 @@ interface Paper {
     citationCount: number;
 }
 
-interface Reference {
+export interface Reference {
     isInfluential: boolean;
     citedPaper: Paper;
 }
 
-interface Citation {
+export interface Citation {
     isInfluential: boolean;
     citingPaper: Paper;
 }

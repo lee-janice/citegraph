@@ -1,8 +1,14 @@
 import { useState } from "react";
 import styled from "styled-components";
-import { getCitationsBySSID, getPaperByDOI, getPaperByKeyword, getReferencesBySSID } from "../api/semanticScholarApi";
+import {
+    getCitationsBySSID,
+    getPaperByDOI,
+    getPaperByKeyword,
+    getReferencesBySSID,
+    Paper,
+} from "../api/semanticScholarApi";
 import { OptId } from "vis-data/declarations/data-interface";
-import { Network } from "vis-network";
+import { Network, IdType } from "vis-network";
 import { DataSet } from "vis-data/peer/esm/vis-data";
 
 /* https://www.w3schools.com/howto/howto_css_fixed_sidebar.asp */
@@ -17,6 +23,7 @@ const StyledSidebar = styled.div`
     overflow-x: hidden; /* disable horizontal scroll */
     border-left: 1px solid var(--borderColor);
     background-color: var(--primaryBackgroundColor);
+    text-align: left;
 
     @media (max-width: 1100px) {
         height: 100%;
@@ -27,6 +34,7 @@ const StyledSidebar = styled.div`
         z-index: 1000;
         border-left: none;
         border-top: 1px solid var(--borderColor);
+        text-align: left;
     }
 `;
 
@@ -47,18 +55,13 @@ const Sidebar: React.FC<Props> = ({ visNetwork, nodes, edges }) => {
     // keep track of nav bar tab state
     // const [currentNavTab, setCurrentNavTab] = useState<NavTab>(NavTab.Home);
 
-    //
-
-    // if (!vis || !visNetwork) {
-    //     return <StyledSidebar className="sidebar"></StyledSidebar>;
-    // }
     const [doiInput, setDoiInput] = useState("");
     const [keywordInput, setKeywordInput] = useState("");
-    const [paper, setPaper] = useState("");
+    const [paper, setPaper] = useState<Paper | null>(null);
     const [nodeCounter, setNodeCounter] = useState(0);
 
     const handlePaper = async (inputType: InputType) => {
-        let paper;
+        let paper: Paper;
         switch (inputType) {
             case InputType.DOI:
                 paper = await getPaperByDOI(doiInput);
@@ -78,29 +81,32 @@ const Sidebar: React.FC<Props> = ({ visNetwork, nodes, edges }) => {
             .sort((a, b) => b.citingPaper.citationCount - a.citingPaper.citationCount)
             .slice(0, 3);
 
-        setPaper(paper.title.toString());
+        setPaper(paper);
 
         // add nodes and edges for paper, references, and citations
         var newNodes: Partial<Record<"id", OptId>>[] = [];
         var newEdges: Partial<Record<"id", OptId>>[] = [];
         var count = 0;
 
+        var newNode = {} as Partial<Record<"id", OptId>>;
+        var newEdge = {} as Partial<Record<"id", OptId>>;
+
+        // add queried paper to graph
         // https://stackoverflow.com/questions/31816061/why-am-i-getting-an-error-object-literal-may-only-specify-known-properties
-        var newNode = {
+        const queriedNode = {
             id: nodeCounter,
             label: paper.title,
             authors: paper.authors,
             abstract: paper.abstract,
-            // calculate size on a log scale (so we don't get ginormous nodes, +5 to have 0 map to 5 and 1 map to 6)
+            // calculate size on a log scale (so we don't get ginormous nodes, also add 5 to have 0 map to 5 and 1 map to 6, etc.)
             size: paper.citationCount === 0 ? 5 : Math.log(paper.citationCount) + 5,
             x: paper.year * 16,
             y: -paper.citationCount / 64,
         } as Partial<Record<"id", OptId>>;
-        newNodes.push(newNode);
+        newNodes.push(queriedNode);
         count += 1;
 
-        var newEdge = {} as Partial<Record<"id", OptId>>;
-
+        // add references to graph
         references.forEach((ref) => {
             newNode = {
                 id: nodeCounter + count,
@@ -123,8 +129,7 @@ const Sidebar: React.FC<Props> = ({ visNetwork, nodes, edges }) => {
             count += 1;
         });
 
-        console.log(newNodes);
-
+        // add citations to graph
         citations.forEach((cite) => {
             newNode = {
                 id: nodeCounter + count,
@@ -151,7 +156,14 @@ const Sidebar: React.FC<Props> = ({ visNetwork, nodes, edges }) => {
         edges.add(newEdges);
         visNetwork?.fit();
         setNodeCounter(nodeCounter + count);
+
+        // select the queried paper in the graph
+        visNetwork?.setSelection({ nodes: [queriedNode.id as IdType] });
     };
+
+    if (!visNetwork) {
+        return <StyledSidebar className="sidebar"></StyledSidebar>;
+    }
 
     return (
         <StyledSidebar className="sidebar">
@@ -163,9 +175,10 @@ const Sidebar: React.FC<Props> = ({ visNetwork, nodes, edges }) => {
             <input type="submit" value="submit" onClick={() => handlePaper(InputType.Keyword)} />
             <br />
             <br />
-            Paper: {paper}
+            Paper: {paper?.title}
             <br />
             <br />
+            Abstract: {paper?.abstract}
             {/* <NavBar currentNavTab={currentNavTab} setCurrentNavTab={setCurrentNavTab} />
             {currentNavTab === NavTab.Home && (
                 <>

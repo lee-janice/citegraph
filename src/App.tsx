@@ -9,6 +9,7 @@ function App() {
     const [visNetwork, setVisNetwork] = useState<Network | null>(null);
     const [nodes, setNodes] = useState(new DataSet({}));
     const [edges, setEdges] = useState(new DataSet({}));
+    const [selection, setSelection] = useState();
 
     return (
         <div className="App">
