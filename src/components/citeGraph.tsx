@@ -12,6 +12,7 @@ interface Props {
 const CiteGraph: React.FC<Props> = ({ setVisNetwork, setNodes, setEdges }) => {
     const nodes = new DataSet([]);
     const edges = new DataSet([]);
+    // https://visjs.github.io/vis-network/docs/network/#options
     const options: Options = {
         nodes: {
             shape: "dot",
@@ -25,6 +26,7 @@ const CiteGraph: React.FC<Props> = ({ setVisNetwork, setNodes, setEdges }) => {
                 },
             },
             font: {
+                size: 11,
                 strokeWidth: 7.5,
             },
             widthConstraint: { maximum: 256 },
@@ -32,10 +34,9 @@ const CiteGraph: React.FC<Props> = ({ setVisNetwork, setNodes, setEdges }) => {
         edges: { arrows: { to: { enabled: true } } },
         physics: false,
         interaction: { multiselect: true }, // allows for multi-select using a long press or cmd-click
-        // layout: { randomSeed: 1337 },
     };
 
-    // Create a ref to provide DOM access
+    // create a ref to provide DOM access
     const visRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
