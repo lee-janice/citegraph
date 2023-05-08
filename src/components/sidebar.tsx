@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import styled from "styled-components";
 import {
     getCitationsBySSID,
@@ -7,9 +7,9 @@ import {
     getReferencesBySSID,
     Paper,
 } from "../api/semanticScholarApi";
-import { OptId } from "vis-data/declarations/data-interface";
 import { Network, IdType } from "vis-network";
 import { DataSet } from "vis-data/peer/esm/vis-data";
+import { Node, Edge } from "./citeGraph";
 
 /* https://www.w3schools.com/howto/howto_css_fixed_sidebar.asp */
 const StyledSidebar = styled.div`
@@ -45,11 +45,12 @@ enum InputType {
 
 interface Props {
     visNetwork: Network | null;
-    nodes: DataSet<Partial<Record<"id", OptId>>, "id">;
-    edges: DataSet<Partial<Record<"id", OptId>>, "id">;
+    nodes: DataSet<Node>;
+    edges: DataSet<Edge>;
+    latestSelection: IdType;
 }
 
-const Sidebar: React.FC<Props> = ({ visNetwork, nodes, edges }) => {
+const Sidebar: React.FC<Props> = ({ visNetwork, nodes, edges, latestSelection }) => {
     // const { vis, visNetwork } = React.useContext(VisContext);
 
     // keep track of nav bar tab state
@@ -57,8 +58,7 @@ const Sidebar: React.FC<Props> = ({ visNetwork, nodes, edges }) => {
 
     const [doiInput, setDoiInput] = useState("");
     const [keywordInput, setKeywordInput] = useState("");
-    const [paper, setPaper] = useState<Paper | null>(null);
-    const [nodeCounter, setNodeCounter] = useState(0);
+    const [paper, setPaper] = useState<Paper | undefined>(undefined);
 
     const handlePaper = async (inputType: InputType) => {
         let paper: Paper;
@@ -84,82 +84,79 @@ const Sidebar: React.FC<Props> = ({ visNetwork, nodes, edges }) => {
         setPaper(paper);
 
         // add nodes and edges for paper, references, and citations
-        var newNodes: Partial<Record<"id", OptId>>[] = [];
-        var newEdges: Partial<Record<"id", OptId>>[] = [];
-        var count = 0;
+        var newNodes: Node[] = [];
+        var newEdges: Edge[] = [];
 
-        var newNode = {} as Partial<Record<"id", OptId>>;
-        var newEdge = {} as Partial<Record<"id", OptId>>;
+        var newNode = {} as Node;
+        var newEdge = {} as Edge;
 
         // add queried paper to graph
         // https://stackoverflow.com/questions/31816061/why-am-i-getting-an-error-object-literal-may-only-specify-known-properties
         const queriedNode = {
-            id: nodeCounter,
+            id: paper.paperId,
+            paper: paper,
             label: paper.title,
-            authors: paper.authors,
-            abstract: paper.abstract,
             // calculate size on a log scale (so we don't get ginormous nodes, also add 5 to have 0 map to 5 and 1 map to 6, etc.)
             size: paper.citationCount === 0 ? 5 : Math.log(paper.citationCount) + 5,
             x: paper.year * 16,
             y: -paper.citationCount / 64,
-        } as Partial<Record<"id", OptId>>;
+        } as Node;
         newNodes.push(queriedNode);
-        count += 1;
 
         // add references to graph
         references.forEach((ref) => {
             newNode = {
-                id: nodeCounter + count,
+                id: ref.citedPaper.paperId,
+                paper: ref.citedPaper,
                 label: ref.citedPaper.title,
-                authors: ref.citedPaper.authors,
-                abstract: ref.citedPaper.abstract,
                 size: ref.citedPaper.citationCount === 0 ? 5 : Math.log(ref.citedPaper.citationCount) + 5,
                 x: ref.citedPaper.year * 16,
                 y: -ref.citedPaper.citationCount / 64,
-            } as Partial<Record<"id", OptId>>;
+            } as Node;
             newNodes.push(newNode);
 
             // add an edge from the reference node to the paper node
             newEdge = {
-                from: nodeCounter + count,
-                to: nodeCounter,
-            } as Partial<Record<"id", OptId>>;
+                from: paper.paperId,
+                to: ref.citedPaper.paperId,
+            } as Edge;
             newEdges.push(newEdge);
-
-            count += 1;
         });
 
         // add citations to graph
         citations.forEach((cite) => {
             newNode = {
-                id: nodeCounter + count,
+                id: cite.citingPaper.paperId,
+                paper: cite.citingPaper,
                 label: cite.citingPaper.title,
-                authors: cite.citingPaper.authors,
-                abstract: cite.citingPaper.abstract,
                 size: cite.citingPaper.citationCount === 0 ? 5 : Math.log(cite.citingPaper.citationCount) + 5,
                 x: cite.citingPaper.year * 16,
                 y: -cite.citingPaper.citationCount / 64,
-            } as Partial<Record<"id", OptId>>;
+            } as Node;
             newNodes.push(newNode);
 
             // add an edge from the paper node to the citation node
             newEdge = {
-                from: nodeCounter,
-                to: nodeCounter + count,
-            } as Partial<Record<"id", OptId>>;
+                from: cite.citingPaper.paperId,
+                to: paper.paperId,
+            } as Edge;
             newEdges.push(newEdge);
-
-            count += 1;
         });
 
         nodes.add(newNodes);
         edges.add(newEdges);
         visNetwork?.fit();
-        setNodeCounter(nodeCounter + count);
+
+        console.log(newNodes);
 
         // select the queried paper in the graph
         visNetwork?.setSelection({ nodes: [queriedNode.id as IdType] });
     };
+
+    // update sidebar when selection is updated
+    useEffect(() => {
+        setPaper(nodes.get(latestSelection)?.paper);
+    }, [latestSelection]);
 
     if (!visNetwork) {
         return <StyledSidebar className="sidebar"></StyledSidebar>;
