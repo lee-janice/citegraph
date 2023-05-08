@@ -1,8 +1,7 @@
 import { Dispatch, SetStateAction, useEffect, useRef } from "react";
 import { IdType, Network, Options } from "vis-network";
 import { DataSet } from "vis-data/peer/esm/vis-data";
-import { OptId } from "vis-data/declarations/data-interface";
-import { Author, Paper } from "../api/semanticScholarApi";
+import { Paper } from "../api/semanticScholarApi";
 
 interface Props {
     setVisNetwork: Dispatch<SetStateAction<Network | null>>;
@@ -44,7 +43,7 @@ const CiteGraph: React.FC<Props> = ({ setVisNetwork, setNodes, setEdges, setLate
             },
             font: {
                 size: 11,
-                strokeWidth: 7.5,
+                strokeWidth: 5,
             },
             widthConstraint: { maximum: 256 },
         },
